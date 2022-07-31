@@ -57,5 +57,16 @@ class chromosome:
             elif gene.get_operation() == geneset.Multiply:
                 prefix += "("
                 result += ")*" + str(gene.get_value())
-        
+            elif gene.get_operation() == geneset.Pow:
+                result += "x^" + str(gene.get_value())
+            elif gene.get_operation() == geneset.Sin:
+                result += "sin((x * " + str(gene.get_value()) + "))"
+            elif gene.get_operation() == geneset.Cos:
+                result += "cos((x * " + str(gene.get_value()) + "))"
+            elif gene.get_operation() == geneset.Inv:
+                result += "1 / " + str(gene.get_value())
+            elif gene.get_operation() == geneset.Sqrt:
+                result += "sqrt((x * " + str(gene.get_value()) + "))"
+            elif gene.get_operation() == geneset.Pow3:
+                result += str(gene.get_value()) + "^3"
         return prefix + "0" + result

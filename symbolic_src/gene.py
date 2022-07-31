@@ -26,6 +26,18 @@ class gene:
             return "-"
         elif self.operation == geneset.Multiply:
             return "*"
+        elif self.operation == geneset.Pow:
+            return "^"
+        elif self.operation == geneset.Sin:
+            return "sin"
+        elif self.operation == geneset.Cos:
+            return "cos"
+        elif self.operation == geneset.Inv:
+            return "inv"
+        elif self.operation == geneset.Sqrt:
+            return "sqrt"
+        elif self.operation == geneset.Pow3:
+            return "pow3"
         else:
             return ""
 
