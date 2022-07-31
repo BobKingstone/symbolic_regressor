@@ -1,7 +1,7 @@
 from symbolic_src.chromosome import chromosome
 
 
-INITIAL_ROUNDS = 800000
+INITIAL_ROUNDS = 8000000
 
 def main():
     # load values from csv file instead of these test values.
