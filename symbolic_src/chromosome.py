@@ -10,43 +10,47 @@ class chromosome:
         self.genes = []
         self.computator = computation_manager()
 
-    def generate_parent_chromosome(self, length : int):
-        """ Generates a random chromosome """
+    def generate_parent_chromosome(self, length: int):
+        """Generates a random chromosome"""
         for i in range(0, length):
             self.genes.append(self.generate_gene())
 
     def clone(self):
-        """ Returns a clone of this chromosome """
+        """Returns a clone of this chromosome"""
         clone = chromosome()
         for g in self.genes:
             clone.genes.append(gene(g.get_operation(), g.get_value()))
         return clone
 
     def generate_gene(self):
-        """ Generates a gene """
+        """Generates a gene"""
         count = len(geneset)
-        gene_value = (random.uniform(0, 1) * 2)
+        gene_value = random.uniform(0, 1) * 2
         gene_index = random.randint(0, count - 1)
         gene_operation = geneset(gene_index)
 
         return gene(gene_operation, gene_value)
-    
+
     def mutate(self):
-        """ Mutates this chromosome """
+        """Mutates this chromosome"""
         idx = random.randint(0, len(self.genes) - 1)
         self.genes[idx] = self.generate_gene()
 
     def get_fitness(self, items: list[(float, float)]):
-        """ Returns the fitness of this chromosome """
+        """Returns the fitness of this chromosome"""
         fitness = 0.0
 
         for item in items:
             fitness -= abs(item[1] - self.computator.compute(self.genes, item[0]))
-        
+
         return fitness
 
+    def compute_for_value(self, value: float):
+        """Computes the value for the given value"""
+        return self.computator.compute(self.genes, value)
+
     def display(self):
-        """ Displays this chromosome textual representation """
+        """Displays this chromosome textual representation"""
         result = ""
         prefix = ""
         for gene in self.genes:
