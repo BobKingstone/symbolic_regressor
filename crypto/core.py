@@ -1,7 +1,10 @@
+from io import BytesIO
 import base64
 import random
 import struct
 import string
+
+import numpy as np
 
 from symbolic_src.chromosome import chromosome
 from symbolic_src.genepool import load_key_function
@@ -32,31 +35,50 @@ def generate_symbolic_key(size: int):
     key = []
     for i in range(size):
         key.append(key_function.compute_for_value(random_numbers[i]))
-    # print("Key: " + str(key))
+    print("Key: " + str(key))
     return random_numbers, key
 
 
-def encrypt_bytes(data: bytes, key: list):
-    """encrypts the bytes using the given key"""
-    buf = struct.pack("%sf" % len(key), *key)
-    return xor_bytes(data, buf)
+def generate_byte_array_symbolic_key(size: int):
+    random_numbers = [random.uniform(0, 1) for _ in range(size)]
+    key_function = load_key_function()
+    # create bytearray
+    key = []
+    for i in range(size):
+        key.append(key_function.compute_for_value(random_numbers[i]))
+
+    key_bytes = struct.pack("%sf" % len(key), *key)
+    print(key_bytes)
+    return random_numbers, key_bytes
 
 
-def decrypt_bytes(data: bytes, key: bytes):
-    """decrypts the given bytes with the key"""
-    return _enc_XOR_bytes(data, key)
+def encrypt_string(data: str):
+    """Encrypts the given string using a symbolic generated key."""
+    _, key = generate_byte_array_symbolic_key(len(data))
+    enc_bytes = encrypt_xor_bytes(data.encode("utf-8"), key)
+    return enc_bytes, key
 
 
-def encrypt_string(data: str, key: list):
-    """encrypts the string using the given key"""
-    # convert key list to string
-    key_str = "".join(key)
-    return _enc_XOR_string(data, key)
+def decrypt_string(data: bytes, key: bytes):
+    """Decrypts the data using the key"""
+    dec_bytes = encrypt_xor_bytes(data, key)
+    return dec_bytes.decode("utf-8")
 
 
-def decrypt_string(data, key):
-    """decrypts the given bytes with the key"""
-    return _enc_XOR_string(data, key)
+def encrypt_nparray(data: np.array):
+    """XORs the data with the key"""
+    np_bytes = BytesIO()
+    np.save(np_bytes, data, allow_pickle=False)
+    nparray = np_bytes.getvalue()
+    _, key = generate_byte_array_symbolic_key(len(nparray))
+    return encrypt_xor_bytes(nparray, key), key
+
+
+def decrypt_nparray(data: bytes, key: bytes):
+    """Decrypts the data using the key"""
+    dec_bytes = encrypt_xor_bytes(data, key)
+    np_bytes = BytesIO(dec_bytes)
+    return np.load(np_bytes, allow_pickle=False)
 
 
 def get_base64encode_data(data: str):
@@ -74,26 +96,6 @@ def get_base64encode_from_bytes(data: bytes):
     return base64.b64encode(data)
 
 
-def get_base64decode_data(data: bytes):
-    """returns the base64 decoded data"""
-    return bytes(base64.b64decode(data)).decode("utf-8")
-
-
-def _enc_XOR_string(data: bytes, key: bytes):
+def encrypt_xor_bytes(data: bytes, key: bytes):
     """XORs the data with the key"""
-    if len(data) != len(key):
-        raise ValueError("Strings must be the same length")
-
-    return "".join([chr(ord(a) ^ ord(b)) for a, b in zip(data, key)])
-
-
-def _enc_XOR_bytes(data: bytes, key: bytes):
-    """XORs the data with the key"""
-    if len(data) != len(key):
-        raise ValueError("data must be the same length")
-
-    return bytes([a ^ b for a, b in zip(data, key)])
-
-
-def xor_bytes(data, key):
-    return bytearray(a ^ b for a, b in zip(*map(bytearray, [data, key])))
+    return bytes(a ^ b for a, b in zip(data, key))

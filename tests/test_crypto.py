@@ -1,10 +1,12 @@
-import pytest
+import numpy as np
 from crypto.core import (
-    decrypt_bytes,
-    decrypt_string,
-    encrypt_bytes,
+    decrypt_nparray,
+    encrypt_nparray,
     encrypt_string,
+    decrypt_string,
+    encrypt_xor_bytes,
     generate_basic_key,
+    generate_byte_array_symbolic_key,
     generate_symbolic_key,
 )
 
@@ -22,69 +24,64 @@ class TestCrypto:
         assert key is not None
         assert len(key) == 10
 
-    def test_encryption(self):
-        """Test that the encryption and decryption functions work as expected."""
+    def test_encrypt_xor_bytes(self):
         testStr = "THIS IS A TEST STRING"
-        key = "THIS IS A TEST STRING"
-        enc = encrypt_string(testStr, key)
-        assert testStr != enc
-        dec = decrypt_string(enc, key)
-        assert testStr == dec
+        test_bytes = bytes(testStr, "utf-8")
+        key = bytes("THIS IS A TEST STRING", "utf-8")
+        enc_bytes = encrypt_xor_bytes(test_bytes, key)
+        assert enc_bytes is not None
+        assert len(enc_bytes) == len(test_bytes)
 
-    def test_encryption_with_incorrect_key_gives_rubbish(self):
-        """Test that the wrong key does not return correct results."""
+    def test_decrypt_bytes(self):
         testStr = "THIS IS A TEST STRING"
-        key = "THIS IS A TEST STRING"
-        enc = encrypt_string(testStr, key)
-        assert testStr != enc
-        key = "THIS IS NOT STRING!!!"
-        dec = decrypt_string(enc, key)
-        assert testStr != dec
+        test_bytes = bytes(testStr, "utf-8")
+        key = bytes("THIS IS A TEST STRING", "utf-8")
+        enc_bytes = encrypt_xor_bytes(test_bytes, key)
+        dec_bytes = encrypt_xor_bytes(enc_bytes, key)
+        assert dec_bytes != enc_bytes
+        assert dec_bytes == test_bytes
+        assert dec_bytes.decode("utf-8") == testStr
 
-    def test_encryption_throws_exception_if_key_is_incorrect_length(self):
-        """Test that the key of the wrong length gives an exception"""
+    def test_encryption_works_with_symbolic_key(self):
         testStr = "THIS IS A TEST STRING"
-        key = "THIS IS THE WRONG LENGTH KEY"
-        with pytest.raises(ValueError):
-            enc = encrypt_string(testStr, key)
+        _, key = generate_byte_array_symbolic_key(len(testStr))
+        print(key)
+        enc_bytes = encrypt_xor_bytes(testStr.encode(), key)
+        assert enc_bytes is not None
+        assert len(enc_bytes) == len(testStr)
+        assert enc_bytes != testStr.encode()
 
-    def test_decryption_throws_exception_if_key_is_incorrect_length(self):
-        """Test that the key of the wrong length gives an exception"""
+    def test_decryption_works_with_symbolic_key(self):
         testStr = "THIS IS A TEST STRING"
-        key = "THIS IS THE WRONG LENGTH KEY"
-        with pytest.raises(ValueError):
-            edecnc = decrypt_string(testStr, key)
+        _, key = generate_byte_array_symbolic_key(len(testStr))
+        enc_bytes = encrypt_xor_bytes(testStr.encode(), key)
+        dec_bytes = encrypt_xor_bytes(enc_bytes, key)
+        assert dec_bytes != enc_bytes
+        assert dec_bytes == testStr.encode()
+        assert dec_bytes.decode("utf-8") == testStr
 
-    def test_encryption_with_saved_symbolic_function(self):
-        """Test that the encryption and decryption functions work as expected."""
+    def test_string_encryption_works(self):
         testStr = "THIS IS A TEST STRING"
-        _, key = generate_symbolic_key(len(testStr))
-        enc = encrypt_string(testStr, key)
-        assert testStr != enc
+        enc_bytes, _ = encrypt_string(testStr)
+        assert enc_bytes is not None
+        assert len(enc_bytes) == len(testStr)
+        assert enc_bytes != testStr.encode()
 
-    def test_decryption_with_saved_symbolic_function(self):
-        """Test that the encryption and decryption functions work as expected."""
+    def test_string_decryption_works(self):
         testStr = "THIS IS A TEST STRING"
-        _, key = generate_symbolic_key(len(testStr))
-        enc = encrypt_string(testStr, key)
-        assert testStr != enc
-        dec = decrypt_string(enc, key)
-        assert testStr == dec
+        enc_bytes, key = encrypt_string(testStr)
+        dec_bytes = decrypt_string(enc_bytes, key)
+        assert dec_bytes != enc_bytes
+        assert dec_bytes == testStr
 
-    def test_encryption_can_encrypt_very_long_strings(self):
-        """Test that the encryption and decryption functions work as expected."""
-        testStr = "THIS IS A TEST STRING" * 1000
-        _, key = generate_symbolic_key(len(testStr))
-        enc = encrypt_string(testStr, key)
-        assert testStr != enc
-        dec = decrypt_string(enc, key)
-        assert testStr == dec
+    def test_encrypt_np_array(self):
+        test_array = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+        enc_bytes, _ = encrypt_nparray(test_array)
+        assert enc_bytes is not None
 
-    def test_encryption_works_for_byte_array(self):
-        """Test that ecrypt_bytes works as expected."""
-        testStr = "THIS IS A TEST STRING"
-        key = "THIS IS A TEST STRING"
-        enc = encrypt_bytes(testStr.encode(), key.encode())
-        assert testStr.encode() != enc
-        dec = decrypt_bytes(enc, key.encode())
-        assert testStr.encode() == dec
+    def test_decrypt_np_array(self):
+        test_array = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+        enc_bytes, key = encrypt_nparray(test_array)
+        dec_array = decrypt_nparray(enc_bytes, key)
+        assert dec_array is not None
+        assert (dec_array == test_array).all()
